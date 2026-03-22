@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drone Monitoring — Four Regions</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e1117;
+    --bg2: #141820;
+    --bg3: #1a2030;
+    --panel: #1e2535;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8eaf0;
+    --text2: rgba(232,234,240,0.6);
+    --text3: rgba(232,234,240,0.35);
+    --blue: #4a9edd;
+    --teal: #3dbfa0;
+    --amber: #f0a840;
+    --coral: #e07060;
+    --green: #70c060;
+    --white: #ffffff;
+    --mono: 'DM Mono', monospace;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
+
+  /* ── HEADER ── */
+  .site-header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(14,17,23,0.9); backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px; height: 56px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-brand {
+    font-family: var(--mono); font-size: 13px; color: var(--teal);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .header-brand::before {
+    content: '◆'; font-size: 10px;
+  }
+  .header-nav { display: flex; gap: 4px; }
+  .header-nav a {
+    font-size: 12px; font-family: var(--mono); color: var(--text3);
+    text-decoration: none; padding: 6px 14px; border-radius: 6px;
+    transition: all 0.15s;
+  }
+  .header-nav a:hover, .header-nav a.active { background: var(--panel); color: var(--teal); }
+  .header-tag {
+    font-family: var(--mono); font-size: 11px; color: var(--text3);
+    border: 1px solid var(--border2); border-radius: 4px; padding: 4px 10px;
+  }
+
+  /* ── HERO STRIP ── */
+  .hero-strip {
+    background: var(--bg2); border-bottom: 1px solid var(--border);
+    padding: 60px 40px 48px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 80px;
+    max-width: 1400px; margin: 0 auto;
+  }
+  .hero-kicker {
+    font-family: var(--mono); font-size: 11px; color: var(--teal);
+    letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px;
+  }
+  h1 {
+    font-family: 'Cormorant Garamond', serif; font-size: clamp(32px,3.5vw,52px);
+    font-weight: 600; line-height: 1.2; color: var(--white); margin-bottom: 20px;
+  }
+  .hero-sub {
+    font-size: 15px; line-height: 1.7; color: var(--text2); max-width: 500px;
+  }
+  .stat-row {
+    display: flex; gap: 0; margin-top: 36px;
+    border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+  }
+  .stat {
+    flex: 1; padding: 20px; border-right: 1px solid var(--border);
+    background: var(--panel);
+  }
+  .stat:last-child { border-right: none; }
+  .stat-val { font-family: 'Cormorant Garamond', serif; font-size: 40px; font-weight: 600; line-height: 1; }
+  .stat-lab { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 4px; letter-spacing: 1px; }
+
+  /* Site map strip */
+  .sites-locator {
+    background: var(--bg3); border-radius: 12px; overflow: hidden;
+    border: 1px solid var(--border); position: relative;
+  }
+  .sites-locator-bar {
+    padding: 10px 16px; background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono); font-size: 11px; color: var(--text3);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .sites-locator-bar::before { content: '◉'; color: var(--teal); font-size: 8px; }
+  .sites-locator-body {
+    height: 260px; position: relative; overflow: hidden;
+    background: linear-gradient(180deg, #0a1a24 0%, #0d2010 100%);
+    display: flex; align-items: center; justify-content: center;
+  }
+  /* Pins */
+  .pin-group { position: absolute; text-align: center; cursor: pointer; }
+  .pin-dot {
+    width: 12px; height: 12px; border-radius: 50%; margin: 0 auto 4px;
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.15);
+    animation: pinpulse 2s ease-in-out infinite;
+  }
+  @keyframes pinpulse { 0%,100%{box-shadow: 0 0 0 3px rgba(255,255,255,0.15)} 50%{box-shadow: 0 0 0 6px rgba(255,255,255,0.08)} }
+  .pin-lab { font-family: var(--mono); font-size: 9px; color: rgba(255,255,255,0.6); white-space: nowrap; }
+  .pin-mrd { top: 55%; left: 62%; } .pin-mrd .pin-dot { background: var(--teal); }
+  .pin-rock { top: 30%; left: 38%; } .pin-rock .pin-dot { background: var(--blue); }
+  .pin-atch { top: 28%; left: 55%; } .pin-atch .pin-dot { background: var(--amber); }
+  .pin-verm { top: 48%; left: 44%; } .pin-verm .pin-dot { background: var(--coral); }
+  .locator-placeholder { font-size: 12px; color: var(--text3); text-align: center; }
+  .locator-placeholder .ico { font-size: 24px; margin-bottom: 8px; }
+
+  /* ── TABS ── */
+  .tabs-section { max-width: 1400px; margin: 0 auto; padding: 40px 40px 0; }
+  .tab-bar {
+    display: flex; gap: 4px; border-bottom: 1px solid var(--border); padding-bottom: 0; margin-bottom: 0;
+  }
+  .tab-btn {
+    padding: 12px 24px; background: none; border: none; cursor: pointer;
+    font-family: var(--mono); font-size: 12px; color: var(--text3);
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: all 0.15s; display: flex; align-items: center; gap: 8px;
+    border-radius: 8px 8px 0 0;
+  }
+  .tab-btn:hover { color: var(--text2); background: var(--panel); }
+  .tab-btn.active { color: var(--white); border-bottom-color: var(--teal); background: var(--panel); }
+  .tab-indicator { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* ── TAB PANELS ── */
+  .tab-panel { display: none; padding: 32px 0; }
+  .tab-panel.active { display: block; }
+
+  .region-layout {
+    display: grid; grid-template-columns: 1fr 380px; gap: 24px; align-items: start;
+  }
+
+  /* Map area */
+  .map-container {
+    border-radius: 12px; overflow: hidden; border: 1px solid var(--border);
+    background: var(--bg3); aspect-ratio: 16/10; position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .map-overlay-bar {
+    position: absolute; top: 12px; left: 12px; right: 12px;
+    display: flex; justify-content: space-between; align-items: flex-start; z-index: 2;
+  }
+  .map-badge {
+    background: rgba(0,0,0,0.7); border-radius: 6px; padding: 6px 12px;
+    font-family: var(--mono); font-size: 11px; color: rgba(255,255,255,0.8);
+    border: 1px solid var(--border2);
+  }
+  .map-legend {
+    background: rgba(0,0,0,0.75); border-radius: 8px; padding: 10px 14px;
+    border: 1px solid var(--border2);
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+  .legend-item:last-child { margin-bottom: 0; }
+  .legend-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .legend-lab { font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.6); }
+  .map-placeholder-body { text-align: center; color: var(--text3); }
+  .map-placeholder-body .ico { font-size: 36px; margin-bottom: 10px; }
+  .map-placeholder-body p { font-size: 12px; }
+  .map-placeholder-body .hint { font-family: var(--mono); font-size: 10px; color: var(--teal); margin-top: 6px; }
+
+  /* Sidebar */
+  .region-sidebar { display: flex; flex-direction: column; gap: 16px; }
+  .sidebar-card {
+    background: var(--panel); border-radius: 10px; padding: 20px;
+    border: 1px solid var(--border);
+  }
+  .sidebar-card-title {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--text3); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
+  }
+  .info-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .info-row:last-child { margin-bottom: 0; }
+  .info-key { font-size: 12px; color: var(--text3); }
+  .info-val { font-family: var(--mono); font-size: 12px; color: var(--text); }
+  .info-val.highlight { color: var(--teal); }
+
+  /* Accuracy bar */
+  .acc-row { margin-bottom: 10px; }
+  .acc-label-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+  .acc-class-name { font-size: 11px; color: var(--text2); }
+  .acc-pct { font-family: var(--mono); font-size: 11px; }
+  .acc-bar-bg { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+  .acc-bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
+
+  /* Challenge note */
+  .challenge-note {
+    border-left: 2px solid var(--amber); padding-left: 14px;
+    margin-bottom: 10px;
+  }
+  .challenge-note .cn-label { font-family: var(--mono); font-size: 10px; color: var(--amber); margin-bottom: 5px; }
+  .challenge-note .cn-body { font-size: 12px; line-height: 1.6; color: var(--text2); }
+
+  /* Survey timeline */
+  .timeline { position: relative; padding-left: 20px; }
+  .timeline::before { content:''; position:absolute; left:6px; top:8px; bottom:8px; width:1px; background:var(--border); }
+  .tl-item { position: relative; margin-bottom: 12px; }
+  .tl-dot { position: absolute; left: -20px; top: 5px; width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--border2); }
+  .tl-dot.done { background: var(--teal); border-color: var(--teal); }
+  .tl-dot.inprog { background: var(--amber); border-color: var(--amber); }
+  .tl-date { font-family: var(--mono); font-size: 10px; color: var(--text3); }
+  .tl-desc { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+  /* Overall stats footer */
+  .bottom-stats {
+    max-width: 1400px; margin: 24px auto 0; padding: 0 40px 60px;
+  }
+  .bottom-stats-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  }
+  .bstat-card {
+    background: var(--panel); border-radius: 10px; padding: 24px;
+    border: 1px solid var(--border); text-align: center;
+  }
+  .bstat-val { font-family: 'Cormorant Garamond', serif; font-size: 42px; font-weight: 600; line-height: 1; }
+  .bstat-lab { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 6px; letter-spacing: 1px; }
+
+  /* ── PROTOCOL SECTION ── */
+  .protocol-section {
+    background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    padding: 60px 40px; max-width: 100%;
+  }
+  .protocol-inner { max-width: 1400px; margin: 0 auto; }
+  .protocol-section h2 { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 600; color: var(--white); margin-bottom: 32px; }
+  .protocol-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .proto-card {
+    background: var(--bg3); border-radius: 10px; padding: 24px;
+    border: 1px solid var(--border);
+  }
+  .proto-icon { font-size: 22px; margin-bottom: 14px; }
+  .proto-title { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 8px; }
+  .proto-body { font-size: 12px; line-height: 1.7; color: var(--text2); }
+
+  /* Footer */
+  footer {
+    background: var(--bg); border-top: 1px solid var(--border);
+    padding: 32px 40px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+  }
+  .f-brand { font-family: var(--mono); font-size: 12px; color: var(--text3); }
+  .f-links { display: flex; gap: 24px; }
+  .f-links a { font-family: var(--mono); font-size: 11px; color: var(--text3); text-decoration: none; }
+  .f-links a:hover { color: var(--teal); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-brand">RoseauWatch · Drone Monitoring</div>
+  <nav class="header-nav">
+    <a href="#">← Wetland Mapping</a>
+    <a href="#" class="active">Drone Monitoring</a>
+    <a href="#">5-Year Analysis →</a>
+  </nav>
+  <div class="header-tag">Milestone 2B</div>
+</header>
+
+<!-- ── HERO ── -->
+<div class="hero-strip">
+  <div>
+    <div class="hero-kicker">◆ Multi-Site UAV Survey Program</div>
+    <h1>Drone-Based Monitoring Across Four Coastal Louisiana Regions</h1>
+    <p class="hero-sub">Fine-scale UAV surveys deployed across four ecologically distinct sites to characterize Roseau cane habitat dynamics, validate satellite classifications, and resolve fine-scale vegetation patterns invisible to spaceborne sensors.</p>
+    <div class="stat-row">
+      <div class="stat"><div class="stat-val" style="color:var(--teal)">4</div><div class="stat-lab">Survey Regions</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--blue)">8</div><div class="stat-lab">Land Cover Classes</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--amber)">92%</div><div class="stat-lab">Classification Acc.</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--green)">2021–</div><div class="stat-lab">Survey Period</div></div>
+    </div>
+  </div>
+
+  <div class="sites-locator">
+    <div class="sites-locator-bar">All survey sites — coastal Louisiana</div>
+    <div class="sites-locator-body">
+      <!-- Fake Louisiana coastline SVG -->
+      <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:0.25" viewBox="0 0 500 260" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 80 Q80 60 130 70 Q180 80 220 65 Q270 50 320 60 Q370 70 420 55 Q460 45 490 50 L490 180 Q450 190 400 200 Q350 210 300 205 Q260 200 230 215 Q190 230 160 220 Q120 210 90 225 Q60 240 30 230 Z" fill="#1a3a2a"/>
+        <!-- River channel -->
+        <path d="M310 60 Q300 90 290 120 Q280 150 275 180 Q270 210 265 230" stroke="#2a5f7a" stroke-width="4" fill="none"/>
+        <path d="M290 120 Q305 130 315 145 Q325 160 330 180" stroke="#2a5f7a" stroke-width="2.5" fill="none"/>
+      </svg>
+      <!-- Pins -->
+      <div class="pin-group pin-mrd">
+        <div class="pin-dot"></div>
+        <div class="pin-lab">Lower MRD</div>
+      </div>
+      <div class="pin-group pin-rock">
+        <div class="pin-dot"></div>
+        <div class="pin-lab">Rockefeller</div>
+      </div>
+      <div class="pin-group pin-atch">
+        <div class="pin-dot"></div>
+        <div class="pin-lab">Atchafalaya</div>
+      </div>
+      <div class="pin-group pin-verm">
+        <div class="pin-dot"></div>
+        <div class="pin-lab">Vermilion Bay</div>
+      </div>
+      <div class="locator-placeholder" style="position:relative;z-index:1">
+        <div class="ico">📍</div>
+        <p style="font-size:11px">Embed multi-site web map here<br>(ArcGIS Online — all 4 site pins)</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TABS ── -->
+<div class="tabs-section">
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab(0)"><div class="tab-indicator" style="background:var(--teal)"></div>Lower MRD</button>
+    <button class="tab-btn" onclick="switchTab(1)"><div class="tab-indicator" style="background:var(--blue)"></div>Rockefeller</button>
+    <button class="tab-btn" onclick="switchTab(2)"><div class="tab-indicator" style="background:var(--amber)"></div>Atchafalaya</button>
+    <button class="tab-btn" onclick="switchTab(3)"><div class="tab-indicator" style="background:var(--coral)"></div>Vermilion Bay</button>
+  </div>
+
+  <!-- Tab 0: Lower MRD -->
+  <div class="tab-panel active" id="tab-0">
+    <div class="region-layout">
+      <div>
+        <div class="map-container">
+          <div class="map-overlay-bar">
+            <div class="map-badge">🛰 Lower MRD — Oct 2024 Classification</div>
+            <div class="map-legend">
+              <div class="legend-item"><div class="legend-swatch" style="background:#2e6b3e"></div><div class="legend-lab">Delta Phragmites</div></div>
+              <div class="legend-item"><div class="legend-swatch" style="background:#7ab832"></div><div class="legend-lab">European Phragmites</div></div>
+              <div class="legend-item"><div class="legend-swatch" style="background:#a8c84a"></div><div class="legend-lab">Marsh Grass</div></div>
+              <div class="legend-item"><div class="legend-swatch" style="background:#1a4a7a"></div><div class="legend-lab">Water</div></div>
+            </div>
+          </div>
+          <div class="map-placeholder-body">
+            <div class="ico">🗺</div>
+            <p>Embed classified orthomosaic<br>Oct 2024 · Lower MRD</p>
+            <p class="hint">→ ArcGIS Web Map: Classification_MRD_Oct2024</p>
+          </div>
+        </div>
+        <!-- Second map: orthomosaic -->
+        <div style="margin-top:16px;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:var(--bg3);height:140px;display:flex;align-items:center;justify-content:center;position:relative;">
+          <div class="map-badge" style="position:absolute;top:10px;left:10px;">Raw Orthomosaic — Jun 2025 (classification in progress)</div>
+          <div class="map-placeholder-body" style="padding-top:24px">
+            <p style="font-size:11px">Embed orthomosaic Web Map: Ortho_MRD_Jun2025</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="region-sidebar">
+        <div class="sidebar-card">
+          <div class="sidebar-card-title">Site Profile</div>
+          <div class="info-row"><div class="info-key">Location</div><div class="info-val">Lower Mississippi River Delta</div></div>
+          <div class="info-row"><div class="info-key">Monitoring since</div><div class="info-val highlight">Spring 2021</div></div>
+          <div class="info-row"><div class="info-key">Latest survey</div><div class="info-val highlight">Jun 2025</div></div>
+          <div class="info-row"><div class="info-key">Survey area</div><div class="info-val">~0.2 km²</div></div>
+          <div class="info-row"><div class="info-key">Drone used</div><div class="info-val">Industrial UAV + multispectral</div></div>
+        </div>
+
+        <div class="sidebar-card">
+          <div class="sidebar-card-title">Classification Accuracy — Oct 2024</div>
+          <div class="acc-row"><div class="acc-label-row"><span class="acc-class-name">Delta Phragmites</span><span class="acc-pct" style="color:var(--teal)">90%</span></div><div class="acc-bar-bg"><div class="acc-bar-fill" style="width:90%;background:var(--teal)"></div></div></div>
+          <div class="acc-row"><div class="acc-label-row"><span class="acc-class-name">Marsh Grass</span><span class="acc-pct" style="color:var(--green)">95%</span></div><div class="acc-bar-bg"><div class="acc-bar-fill" style="width:95%;background:var(--green)"></div></div></div>
+          <div class="acc-row"><div class="acc-label-row"><span class="acc-class-name">Water</span><span class="acc-pct" style="color:var(--blue)">95%</span></div><div class="acc-bar-bg"><div class="acc-bar-fill" style="width:95%;background:var(--blue)"></div></div></div>
+          <div class="acc-row"><div class="acc-label-row"><span class="acc-class-name">Shrub</span><span class="acc-pct" style="color:var(--amber)">78%</span></div><div class="acc-bar-bg"><div class="acc-bar-fill" style="width:78%;background:var(--amber)"></div></div></div>
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between">
+            <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">OVERALL</span>
+            <span style="font-family:var(--mono);font-size:14px;color:var(--teal)">92% · κ=0.89</span>
+          </div>
+        </div>
+
+        <div class="sidebar-card">
+          <div class="sidebar-card-title">Survey History</div>
+          <div class="timeline">
+            <div class="tl-item"><div class="tl-dot done"></div><div class="tl-date">Spring 2021</div><div class="tl-desc">First baseline survey</div></div>
+            <div class="tl-item"><div class="tl-dot done"></div><div class="tl-date">Summer 2023</div><div class="tl-desc">Orthomosaic + NDVI analysis</div></div>
+            <div class="tl-item"><div class="tl-dot done"></div><div class="tl-date">Fall 2023</div><div class="tl-desc">Seasonal comparison survey</div></div>
+            <div class="tl-item"><div class="tl-dot done"></div><div class="tl-date">Oct 2024</div><div class="tl-desc">U-Net deep learning classification (92%)</div></div>
+            <div class="tl-item"><div class="tl-dot inprog"></div><div class="tl-date">Jun 2025</div><div class="tl-desc">Orthomosaic done · Classification in progress</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 1: Rockefeller -->
+  <div class="tab-panel" id="tab-1">
+    <div class="region-layout">
+      <div class="map-container" style="aspect-ratio:16/10">
+        <div class="map-overlay-bar">
+          <div class="map-badge">🛰 Rockefeller Wildlife Refuge</div>
+        </div>
+        <div class="map-placeholder-body">
+          <div class="ico">🗺</div>
+          <p>Embed drone orthomosaic<br>Rockefeller Wildlife Refuge</p>
+          <p class="hint">→ ArcGIS Web Map: Ortho_Rockefeller_Latest</p>
+        </div>
+      </div>
+      <div class="region-sidebar">
+        <div class="sidebar-card">
+          <div class="sidebar-card-title">Site Profile</div>
+          <div class="info-row"><div class="info-key">Location</div><div class="info-val">Rockefeller Wildlife Refuge</div></div>
+          <div class="info-row"><div class="info-key">Surveys started</div><div class="info-val highlight">Fall 2024</div></div>
+          <div class="info-row"><div class="info-key">Access method</div><div class="info-val">Airboat (director-assisted)</div></div>
+          <div class="info-row"><div class="info-key">Site extent</div><div class="info-val">Larger than 0.2 km² MRD</div></div>
+        </div>
+        <div class="sidebar-card">
+          <div class="sidebar-card-title">Field Challenges & Solutions</div>
+          <div class="challenge-note">
+            <div class="cn-label">⚠ Challenge</div>
+            <div class="cn-body">Extremely shallow water level made mud boat access infeasible. Required director coordination for airboat support.</div>
+          </div>
+          <div class="challenge-note" style="border-color:var(--teal)">
+            <div class="cn-label" style="color:var(--teal)">✓ Solution</div>
+            <div class="cn-body">Secured airboat and captain through refuge director. Five flight tests conducted to optimize mapping plan for larger site extent.</div>
+          </div>
+          <div class="challenge-note">
+            <div class="cn-label">⚠ Challenge</div>
+            <div class="cn-body">Sun glint and rolling patterns in orthophotos due to higher water presence at this site.</div>
+          </div>
+          <div class="challenge-note" style="border-color:var(--teal)">
+            <div class="cn-label" style="color:var(--teal)">✓ Solution</div>
+            <div class="cn-body">Tested three strategies: changing course angles, sun-angle-adaptive course adjustment, reducing water-area in flight plan. Improvements confirmed for Fall 2025.</div>
+          </div>
+        </div>
+        <div class="sidebar-card">
+          <div class="sidebar-card-title">Survey History</div>
+          <div class="timeline">
+            <div class="tl-item"><div class="tl-dot done"></div><div class="tl-date">Fall 2024</div><div class="tl-desc">5 flight tests + mapping plan optimization</div></div>
+            <div class="tl-item"><div class="tl-dot inprog"></div><div class="tl-date">Fall 2025 (planned)</div><div class="tl-desc">Full survey with improved sun-glint protocol</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 2: Atchafalaya -->
+  <div class="tab-panel" id="tab-2">
+    <div class="region-layout">
+      <div class="map-container" style="aspect-ratio:16/10">
+        <div class="map-overlay-bar">
+          <div class="map-badge">🛰 Atchafalaya Basin</div>
+        </div>
+        <div class="map-placeholder-body">
+          <div class="ico">🗺</div>
+          <p>Embed drone survey imagery<br>Atchafalaya Basin</p>
+          <p class="hint">→ ArcGIS Web Map: Ortho_Atchafalaya_Latest</p>
+        </div>
+      </div>
+      <div class="region-sidebar">
+        <div class="sidebar-card">
+          <div class="sidebar-card-title">Site Profile</div>
+          <div class="info-row"><div class="info-key">Location</div><div class="info-val">Atchafalaya Basin</div></div>
+          <div class="info-row"><div class="info-key">Selection rationale</div><div class="info-val">Only viable basin site</div></div>
+          <div class="info-row"><div class="info-key">Drone platform</div><div class="info-val">Phantom 4 (natural color)</div></div>
+          <div class="info-row"><div class="info-key">Imagery type</div><div class="info-val">Natural color RGB</div></div>
+        </div>
+        <div class="sidebar-card">
+          <div class="sidebar-card-title">Field Challenges & Solutions</div>
+          <div class="challenge-note">
+            <div class="cn-label">⚠ Challenge</div>
+            <div class="cn-body">Shallow water depth prevents industrial drone launch from standard locations. No boat launch points available for larger UAVs.</div>
+          </div>
+          <div class="challenge-note" style="border-color:var(--teal)">
+            <div class="cn-label" style="color:var(--teal)">✓ Solution</div>
+            <div class="cn-body">Adopted boat-based Phantom 4 deployment strategy. Angled imagery combined with field plant-type observation from nearby boat. Provides sufficient resolution for vegetation mapping.</div>
+          </div>
+        </div>
+        <div class="sidebar-card">
+          <div class="sidebar-card-title">Survey History</div>
+          <div class="timeline">
+            <div class="tl-item"><div class="tl-dot done"></div><div class="tl-date">Fall 2024</div><div class="tl-desc">Boat-based Phantom 4 survey</div></div>
+            <div class="tl-item"><div class="tl-dot inprog"></div><div class="tl-date">2025 (planned)</div><div class="tl-desc">Follow-up survey with optimized protocol</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 3: Vermilion Bay -->
+  <div class="tab-panel" id="tab-3">
+    <div class="region-layout">
+      <div class="map-container" style="aspect-ratio:16/10">
+        <div class="map-overlay-bar">
+          <div class="map-badge">🛰 Vermilion Bay</div>
+        </div>
+        <div class="map-placeholder-body">
+          <div class="ico">🗺</div>
+          <p>Embed drone orthomosaic<br>Vermilion Bay</p>
+          <p class="hint">→ ArcGIS Web Map: Ortho_VermilionBay_Latest</p>
+        </div>
+      </div>
+      <div class="region-sidebar">
+        <div class="sidebar-card">
+          <div class="sidebar-card-title">Site Profile</div>
+          <div class="info-row"><div class="info-key">Location</div><div class="info-val">Vermilion Bay, coastal LA</div></div>
+          <div class="info-row"><div class="info-key">Water presence</div><div class="info-val">Significant (open bay)</div></div>
+          <div class="info-row"><div class="info-key">Key challenge</div><div class="info-val">Sun glint, rolling patterns</div></div>
+        </div>
+        <div class="sidebar-card">
+          <div class="sidebar-card-title">Field Challenges & Solutions</div>
+          <div class="challenge-note">
+            <div class="cn-label">⚠ Challenge</div>
+            <div class="cn-body">Significant open water presence causes pronounced sun glint and rolling patterns in derived orthomosaics, introducing spectral errors in NDVI-based analysis.</div>
+          </div>
+          <div class="challenge-note" style="border-color:var(--teal)">
+            <div class="cn-label" style="color:var(--teal)">✓ Solution</div>
+            <div class="cn-body">Sun-angle-adaptive flight course optimization. Restricted survey areas to minimize water fraction. Protocol refined for Fall 2025 surveys.</div>
+          </div>
+        </div>
+        <div class="sidebar-card">
+          <div class="sidebar-card-title">Survey History</div>
+          <div class="timeline">
+            <div class="tl-item"><div class="tl-dot done"></div><div class="tl-date">Fall 2024</div><div class="tl-desc">Initial site survey</div></div>
+            <div class="tl-item"><div class="tl-dot inprog"></div><div class="tl-date">Fall 2025 (planned)</div><div class="tl-desc">Improved sun glint protocol deployment</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── BOTTOM STATS ── -->
+<div class="bottom-stats">
+  <div class="bottom-stats-grid">
+    <div class="bstat-card"><div class="bstat-val" style="color:var(--teal)">92%</div><div class="bstat-lab">Best Classification Accuracy</div></div>
+    <div class="bstat-card"><div class="bstat-val" style="color:var(--blue)">0.89</div><div class="bstat-lab">Kappa Coefficient (MRD)</div></div>
+    <div class="bstat-card"><div class="bstat-val" style="color:var(--amber)">8</div><div class="bstat-lab">Land Cover Classes</div></div>
+    <div class="bstat-card"><div class="bstat-val" style="color:var(--coral)">5+</div><div class="bstat-lab">Survey Seasons (MRD)</div></div>
+  </div>
+</div>
+
+<!-- ── PROTOCOL ── -->
+<div class="protocol-section">
+  <div class="protocol-inner">
+    <div style="font-family:var(--mono);font-size:11px;color:var(--teal);letter-spacing:2px;margin-bottom:10px;">◆ STANDARDIZED METHODOLOGY</div>
+    <h2>Consistent Drone Survey Protocol Across All Sites</h2>
+    <div class="protocol-grid">
+      <div class="proto-card"><div class="proto-icon">📐</div><div class="proto-title">RTK GPS Ground Control</div><div class="proto-body">Customized stake-mounted targets developed for soft wetland substrate. Upgraded to larger targets (6 at 24" + 6 at 36" stakes) for high water conditions. RTK base runs minimum 4 hours per survey.</div></div>
+      <div class="proto-card"><div class="proto-icon">🚁</div><div class="proto-title">UAV Platform Selection</div><div class="proto-body">Industrial multispectral drone for MRD and Rockefeller. Phantom 4 (natural color) for shallow-water Atchafalaya site. Platform selection driven by site accessibility and water depth constraints.</div></div>
+      <div class="proto-card"><div class="proto-icon">🧠</div><div class="proto-title">Deep Learning Classification</div><div class="proto-body">U-Net semantic segmentation model applied to processed orthomosaics. Agisoft Metashape used for orthomosaic production. Training samples collected through drone-based field sampling to overcome wetland accessibility limitations.</div></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="f-brand">RoseauWatch · AP23PPQS&T00C161 · March–September 2025</div>
+  <div class="f-links">
+    <a href="#">← Wetland Mapping</a>
+    <a href="#">5-Year Analysis →</a>
+    <a href="#">Data Portal</a>
+  </div>
+</footer>
+
+<script>
+function switchTab(i) {
+  document.querySelectorAll('.tab-panel').forEach((p,j) => p.classList.toggle('active', j===i));
+  document.querySelectorAll('.tab-btn').forEach((b,j) => b.classList.toggle('active', j===i));
+}
+</script>
+</body>
+</html>

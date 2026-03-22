@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fragmented Wetland Mapping — Roseau Cane</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&family=Source+Serif+4:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --marsh: #2d4a3e;
+    --marsh-mid: #3d6b57;
+    --marsh-light: #5a8f72;
+    --water: #1a3a4a;
+    --water-light: #2a5f7a;
+    --sand: #c8a96e;
+    --sand-light: #e8d5a8;
+    --cream: #f5f0e8;
+    --text-dark: #1a1f1c;
+    --text-mid: #3a4a40;
+    --text-muted: #6a7a6d;
+    --accent: #7ab892;
+    --sentinel: #4a9aba;
+    --landsat: #c87a3a;
+    --white: #ffffff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Source Sans 3', sans-serif;
+    background: var(--cream);
+    color: var(--text-dark);
+    overflow-x: hidden;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    background: linear-gradient(160deg, #0d2218 0%, #1a3a2a 40%, #0f2535 100%);
+    position: relative;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+  }
+  .hero-grid {
+    position: absolute; inset: 0;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(90,143,114,0.08) 60px),
+      repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(90,143,114,0.08) 60px);
+  }
+  .hero-noise {
+    position: absolute; inset: 0;
+    background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: 0.4;
+  }
+  .hero-orb {
+    position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none;
+  }
+  .orb1 { width: 600px; height: 600px; background: rgba(42,95,122,0.3); top: -100px; right: -100px; }
+  .orb2 { width: 400px; height: 400px; background: rgba(61,107,87,0.25); bottom: 50px; left: -50px; }
+
+  .hero-inner {
+    position: relative; z-index: 2;
+    max-width: 1100px; margin: 0 auto; padding: 80px 60px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;
+  }
+  .hero-label {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 11px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 24px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .hero-label::before {
+    content: ''; display: block; width: 32px; height: 1px; background: var(--accent);
+  }
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(36px, 4vw, 56px); font-weight: 700; line-height: 1.15;
+    color: var(--white); margin-bottom: 24px;
+  }
+  h1 em { font-style: italic; color: var(--accent); }
+  .hero-sub {
+    font-family: 'Source Serif 4', serif;
+    font-size: 18px; line-height: 1.7; color: rgba(255,255,255,0.65);
+    margin-bottom: 40px; font-weight: 300;
+  }
+  .hero-meta {
+    display: flex; gap: 32px; flex-wrap: wrap;
+  }
+  .meta-item {
+    border-left: 2px solid var(--accent);
+    padding-left: 14px;
+  }
+  .meta-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 4px; }
+  .meta-val { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.85); }
+
+  /* Map placeholder */
+  .map-frame {
+    border-radius: 12px; overflow: hidden;
+    border: 1px solid rgba(90,143,114,0.3);
+    box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+    background: #0d1f18;
+    aspect-ratio: 4/3;
+    position: relative;
+    display: flex; flex-direction: column;
+  }
+  .map-topbar {
+    padding: 10px 16px; background: rgba(255,255,255,0.06);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot.r { background: #c0392b; } .dot.y { background: #c0952b; } .dot.g { background: var(--accent); }
+  .map-body {
+    flex: 1; position: relative;
+    background: linear-gradient(180deg, #0d2a1f 0%, #0a1e2c 60%, #071520 100%);
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+  }
+  .map-placeholder-text {
+    text-align: center; color: rgba(255,255,255,0.25); font-size: 13px;
+    letter-spacing: 1px;
+  }
+  .map-placeholder-text .icon { font-size: 32px; margin-bottom: 8px; opacity: 0.4; }
+  /* Simulated map vector lines */
+  .map-svg { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.35; }
+
+  .scroll-cue {
+    position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    color: rgba(255,255,255,0.4); font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    z-index: 3;
+  }
+  .scroll-arrow {
+    width: 1px; height: 40px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.3), transparent);
+    animation: scrollpulse 1.8s ease-in-out infinite;
+  }
+  @keyframes scrollpulse { 0%,100%{opacity:0.3;transform:scaleY(1)} 50%{opacity:1;transform:scaleY(1.2)} }
+
+  /* ── SECTIONS ── */
+  section { padding: 100px 60px; max-width: 1100px; margin: 0 auto; }
+
+  /* ── CHALLENGE ── */
+  .challenge-section { padding-top: 120px; }
+  .section-tag {
+    font-size: 11px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--marsh-light); margin-bottom: 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-tag::before { content: ''; display: block; width: 24px; height: 1px; background: var(--marsh-light); }
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(28px, 3vw, 42px); font-weight: 700; line-height: 1.25;
+    color: var(--text-dark); margin-bottom: 24px;
+  }
+  .lead {
+    font-family: 'Source Serif 4', serif;
+    font-size: 19px; line-height: 1.8; color: var(--text-mid);
+    max-width: 680px; margin-bottom: 32px; font-weight: 300;
+  }
+  body-text, .body { font-size: 16px; line-height: 1.8; color: var(--text-muted); max-width: 680px; }
+
+  .challenge-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 48px;
+  }
+  .challenge-card {
+    background: var(--white); border-radius: 12px; padding: 32px;
+    border: 1px solid rgba(0,0,0,0.07);
+    border-top: 3px solid var(--marsh-light);
+    transition: box-shadow 0.2s;
+  }
+  .challenge-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.08); }
+  .card-num { font-family: 'Playfair Display', serif; font-size: 48px; font-weight: 700; color: rgba(0,0,0,0.06); line-height: 1; margin-bottom: 12px; }
+  .card-title { font-size: 15px; font-weight: 600; color: var(--text-dark); margin-bottom: 10px; }
+  .card-body { font-size: 14px; line-height: 1.7; color: var(--text-muted); }
+
+  /* ── WORKFLOW ── */
+  .workflow-section {
+    background: var(--marsh);
+    max-width: 100%; padding: 100px 60px;
+  }
+  .workflow-inner { max-width: 1100px; margin: 0 auto; }
+  .workflow-section h2 { color: var(--white); }
+  .workflow-section .section-tag { color: var(--accent); }
+  .workflow-section .section-tag::before { background: var(--accent); }
+
+  .steps {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+    margin-top: 56px; position: relative;
+  }
+  .steps::before {
+    content: ''; position: absolute; top: 36px; left: 10%; right: 10%; height: 1px;
+    background: linear-gradient(to right, transparent, rgba(122,184,146,0.4), rgba(122,184,146,0.4), transparent);
+  }
+  .step {
+    text-align: center; padding: 0 16px; position: relative;
+  }
+  .step-num {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(122,184,146,0.4);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+    font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700;
+    color: var(--accent);
+  }
+  .step-title { font-size: 14px; font-weight: 600; color: var(--white); margin-bottom: 10px; }
+  .step-body { font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.5); }
+  .step-tag {
+    display: inline-block; margin-bottom: 12px; padding: 3px 10px; border-radius: 99px;
+    font-size: 10px; letter-spacing: 1px; text-transform: uppercase; font-weight: 600;
+  }
+  .tag-landsat { background: rgba(200,122,58,0.2); color: var(--landsat); }
+  .tag-sentinel { background: rgba(74,154,186,0.2); color: var(--sentinel); }
+  .tag-both { background: rgba(122,184,146,0.2); color: var(--accent); }
+  .tag-field { background: rgba(200,169,110,0.2); color: var(--sand); }
+
+  /* ── DATA SOURCES ── */
+  .datasrc-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 2px;
+    border-radius: 16px; overflow: hidden; margin-top: 56px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.12);
+  }
+  .datasrc-card {
+    padding: 48px 40px; position: relative; overflow: hidden;
+  }
+  .ds-landsat { background: #2a1a0a; }
+  .ds-sentinel { background: #0a1a2a; }
+  .ds-icon { font-size: 48px; margin-bottom: 20px; opacity: 0.8; }
+  .ds-title {
+    font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 600; margin-bottom: 8px;
+  }
+  .ds-landsat .ds-title { color: #e8a060; }
+  .ds-sentinel .ds-title { color: #60b0e0; }
+  .ds-sub { font-size: 13px; letter-spacing: 1px; text-transform: uppercase; font-weight: 600; margin-bottom: 20px; opacity: 0.5; color: #fff; }
+  .ds-body { font-size: 14px; line-height: 1.7; color: rgba(255,255,255,0.6); margin-bottom: 24px; }
+  .ds-specs { list-style: none; }
+  .ds-specs li {
+    font-size: 13px; color: rgba(255,255,255,0.5); padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex; justify-content: space-between;
+  }
+  .ds-specs li span { color: rgba(255,255,255,0.85); font-weight: 500; }
+
+  /* ── CLASSIFICATION ── */
+  .classes-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 48px;
+  }
+  .class-chip {
+    background: var(--white); border-radius: 10px; padding: 20px 16px;
+    border: 1px solid rgba(0,0,0,0.06); text-align: center;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .class-chip:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+  .class-swatch { width: 36px; height: 36px; border-radius: 8px; margin: 0 auto 10px; }
+  .class-name { font-size: 12px; font-weight: 600; color: var(--text-dark); line-height: 1.3; text-align: center; }
+
+  /* ── ACCURACY ── */
+  .accuracy-band {
+    background: #0d2218; padding: 80px 60px;
+    max-width: 100%;
+  }
+  .accuracy-inner { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 2fr; gap: 80px; align-items: center; }
+  .accuracy-big {
+    text-align: center;
+  }
+  .accuracy-pct {
+    font-family: 'Playfair Display', serif; font-size: 96px; font-weight: 700;
+    color: var(--accent); line-height: 1; margin-bottom: 8px;
+  }
+  .accuracy-pct-label { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+  .kappa-row { display: flex; gap: 40px; margin-top: 32px; justify-content: center; }
+  .kappa-item { text-align: center; }
+  .kappa-val { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 600; color: var(--sentinel); }
+  .kappa-lab { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.35); margin-top: 4px; }
+
+  .accuracy-table {
+    overflow-x: auto;
+  }
+  .accuracy-table table {
+    width: 100%; border-collapse: collapse; font-size: 12px;
+  }
+  .accuracy-table th {
+    background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5);
+    font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600;
+    padding: 10px 12px; text-align: left;
+  }
+  .accuracy-table td {
+    padding: 9px 12px; color: rgba(255,255,255,0.7);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .accuracy-table tr:hover td { background: rgba(255,255,255,0.03); }
+  .accuracy-table .hi { color: var(--accent); font-weight: 600; }
+  .accuracy-table .low { color: rgba(255,255,255,0.35); }
+  .acc-section-tag { color: var(--accent); font-size: 11px; letter-spacing: 3px; text-transform: uppercase; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .acc-section-tag::before { content:''; width:24px; height:1px; background:var(--accent); display:block; }
+  .acc-h2 { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; color: var(--white); margin-bottom: 32px; }
+
+  /* ── MAP RESULTS ── */
+  .map-results-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 48px;
+  }
+  .map-result-card {
+    border-radius: 14px; overflow: hidden; border: 1px solid rgba(0,0,0,0.08);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.07);
+  }
+  .map-result-thumb {
+    height: 200px;
+    background: linear-gradient(135deg, #1a3a2a, #0a2030);
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+  }
+  .map-thumb-label {
+    position: absolute; top: 12px; left: 12px;
+    background: rgba(0,0,0,0.6); border-radius: 6px; padding: 4px 10px;
+    font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.8); letter-spacing: 1px;
+  }
+  .map-result-info { background: var(--white); padding: 24px; }
+  .map-result-year { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: var(--marsh); margin-bottom: 4px; }
+  .map-result-src { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
+  .map-result-desc { font-size: 13px; line-height: 1.6; color: var(--text-muted); }
+  .map-placeholder-svg { opacity: 0.15; }
+
+  /* ── SIGNIFICANCE ── */
+  .significance {
+    background: var(--sand-light); padding: 100px 60px; max-width: 100%;
+    border-top: 4px solid var(--marsh-light);
+  }
+  .sig-inner { max-width: 1100px; margin: 0 auto; }
+  .sig-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin-top: 48px; }
+  .sig-card { background: var(--white); border-radius: 14px; padding: 36px 28px; }
+  .sig-icon { font-size: 28px; margin-bottom: 16px; }
+  .sig-title { font-size: 15px; font-weight: 600; color: var(--text-dark); margin-bottom: 10px; }
+  .sig-body { font-size: 13px; line-height: 1.7; color: var(--text-muted); }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--text-dark); padding: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 24px;
+  }
+  .footer-logo { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--white); }
+  .footer-logo span { color: var(--accent); }
+  .footer-links { display: flex; gap: 32px; }
+  .footer-links a { color: rgba(255,255,255,0.45); text-decoration: none; font-size: 13px; transition: color 0.2s; }
+  .footer-links a:hover { color: var(--accent); }
+  .footer-copy { color: rgba(255,255,255,0.25); font-size: 12px; width: 100%; }
+
+  /* ── FADE IN ── */
+  .fade-in { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .fade-in.visible { opacity: 1; transform: none; }
+
+  /* ── MAP ANIMATION LINES ── */
+  @keyframes drawline { from { stroke-dashoffset: 300; } to { stroke-dashoffset: 0; } }
+</style>
+</head>
+<body>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-noise"></div>
+  <div class="hero-orb orb1"></div>
+  <div class="hero-orb orb2"></div>
+
+  <div class="hero-inner">
+    <div>
+      <div class="hero-label">Milestone 2 · Spatial Analysis</div>
+      <h1>Mapping <em>Roseau Cane</em> Across Fragmented Coastal Wetlands</h1>
+      <p class="hero-sub">A large-scale satellite classification framework to extract Roseau cane distribution from spectrally complex marsh landscapes in the lower Mississippi River Delta.</p>
+      <div class="hero-meta">
+        <div class="meta-item"><div class="meta-label">Study Area</div><div class="meta-val">Lower MRD, Louisiana</div></div>
+        <div class="meta-item"><div class="meta-label">Data Sources</div><div class="meta-val">Landsat · Sentinel-2</div></div>
+        <div class="meta-item"><div class="meta-label">Years Analyzed</div><div class="meta-val">2010 · 2019 · 2022</div></div>
+      </div>
+    </div>
+
+    <div class="map-frame">
+      <div class="map-topbar">
+        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+        <span style="margin-left:8px;font-size:11px;color:rgba(255,255,255,0.3);">Lower MRD — Roseau Cane Distribution</span>
+      </div>
+      <div class="map-body">
+        <svg class="map-svg" viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
+          <!-- Simulated delta channels -->
+          <path d="M 80 280 Q 100 200 120 160 Q 140 120 160 80 Q 180 40 200 20" stroke="#2a5f7a" stroke-width="8" fill="none" stroke-linecap="round"/>
+          <path d="M 200 20 Q 220 60 240 100 Q 260 140 270 180 Q 280 220 300 280" stroke="#2a5f7a" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <path d="M 160 80 Q 180 100 200 120 Q 220 130 240 100" stroke="#3d8a6a" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <!-- Roseau cane patches -->
+          <ellipse cx="150" cy="140" rx="30" ry="20" fill="#3d6b57" opacity="0.7"/>
+          <ellipse cx="220" cy="90" rx="25" ry="15" fill="#3d6b57" opacity="0.6"/>
+          <ellipse cx="260" cy="170" rx="20" ry="30" fill="#5a8f72" opacity="0.5"/>
+          <ellipse cx="130" cy="200" rx="18" ry="12" fill="#3d6b57" opacity="0.65"/>
+          <ellipse cx="290" cy="120" rx="14" ry="22" fill="#5a8f72" opacity="0.55"/>
+          <!-- Grid reference lines -->
+          <line x1="0" y1="70" x2="400" y2="70" stroke="rgba(90,143,114,0.15)" stroke-width="0.5"/>
+          <line x1="0" y1="140" x2="400" y2="140" stroke="rgba(90,143,114,0.15)" stroke-width="0.5"/>
+          <line x1="0" y1="210" x2="400" y2="210" stroke="rgba(90,143,114,0.15)" stroke-width="0.5"/>
+          <line x1="100" y1="0" x2="100" y2="280" stroke="rgba(90,143,114,0.15)" stroke-width="0.5"/>
+          <line x1="200" y1="0" x2="200" y2="280" stroke="rgba(90,143,114,0.15)" stroke-width="0.5"/>
+          <line x1="300" y1="0" x2="300" y2="280" stroke="rgba(90,143,114,0.15)" stroke-width="0.5"/>
+        </svg>
+        <div class="map-placeholder-text">
+          <div class="icon">🗺</div>
+          <div>Your classified map will appear here</div>
+          <div style="margin-top:4px;font-size:11px;opacity:0.6;">(Embed from ArcGIS Online)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-cue">
+    <span>Scroll</span>
+    <div class="scroll-arrow"></div>
+  </div>
+</div>
+
+<!-- ── CHALLENGE ── -->
+<section class="challenge-section fade-in">
+  <div class="section-tag">The Problem</div>
+  <h2>Why Mapping Roseau Cane is Scientifically Challenging</h2>
+  <p class="lead">Coastal wetlands are spectrally complex environments where Roseau cane co-occurs with other marsh vegetation — making separation through conventional vegetation indices unreliable at landscape scale.</p>
+
+  <div class="challenge-grid">
+    <div class="challenge-card fade-in">
+      <div class="card-num">01</div>
+      <div class="card-title">Spectral Mixing with Co-occurring Species</div>
+      <div class="card-body">Standard NDVI-based assessments cannot distinguish Roseau cane from adjacent marsh grasses, cattails, and shrubs. This leads to overestimation of die-back extent and inaccurate spatial attribution.</div>
+    </div>
+    <div class="challenge-card fade-in">
+      <div class="card-num">02</div>
+      <div class="card-title">Limited Large-Scale Ground Sampling</div>
+      <div class="card-body">Coastal wetland accessibility is severely restricted by shallow water, soft substrate, and dense vegetation — making traditional transect-based validation impractical at the delta scale.</div>
+    </div>
+    <div class="challenge-card fade-in">
+      <div class="card-num">03</div>
+      <div class="card-title">Dynamic Water Level Interference</div>
+      <div class="card-body">Tidal and riverine water fluctuations alter reflectance signatures seasonally, creating temporal inconsistencies that complicate multi-year change detection using single-date imagery.</div>
+    </div>
+    <div class="challenge-card fade-in">
+      <div class="card-num">04</div>
+      <div class="card-title">Fragmented Spatial Distribution</div>
+      <div class="card-body">Roseau cane exists as isolated patches and continuous stands across a 200+ km² landscape, requiring methods capable of capturing both sparse and dense distribution patterns simultaneously.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── WORKFLOW ── -->
+<div class="workflow-section">
+  <div class="workflow-inner">
+    <div class="section-tag">Methodology</div>
+    <h2>Classification Workflow</h2>
+
+    <div class="steps">
+      <div class="step fade-in">
+        <div class="step-num">01</div>
+        <span class="step-tag tag-landsat">Landsat</span>
+        <div class="step-title">Satellite Image Acquisition</div>
+        <div class="step-body">Cloud-free Landsat-8 and Sentinel-2 imagery acquired for 2010, 2019, and 2022 growing seasons. Images selected for minimum water-level difference to reduce tidal interference.</div>
+      </div>
+      <div class="step fade-in">
+        <div class="step-num">02</div>
+        <span class="step-tag tag-field">Field + Drone</span>
+        <div class="step-title">Training Sample Collection</div>
+        <div class="step-body">Field surveys and drone-derived high-resolution imagery used to generate spectrally pure training polygons for each land cover class, overcoming ground accessibility limitations.</div>
+      </div>
+      <div class="step fade-in">
+        <div class="step-num">03</div>
+        <span class="step-tag tag-both">Classification</span>
+        <div class="step-title">Supervised Classification & Extraction</div>
+        <div class="step-body">Machine learning classifier applied to separate Roseau cane from other wetland vegetation types. Results cross-validated against NAIP aerial photography and Google Earth imagery.</div>
+      </div>
+      <div class="step fade-in">
+        <div class="step-num">04</div>
+        <span class="step-tag tag-sentinel">Sentinel-2</span>
+        <div class="step-title">Accuracy Assessment & Refinement</div>
+        <div class="step-body">Comprehensive accuracy assessment with confusion matrix. Classified patterns compared against field observations to ensure the maps accurately reflect ground conditions.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── DATA SOURCES ── -->
+<section class="fade-in">
+  <div class="section-tag">Remote Sensing Data</div>
+  <h2>Dual-Sensor Approach: Landsat & Sentinel-2</h2>
+  <p class="lead">Using two complementary satellite sensors provides temporal depth and spatial detail — critical for separating closely related wetland vegetation at landscape scale.</p>
+
+  <div class="datasrc-grid">
+    <div class="datasrc-card ds-landsat">
+      <div class="ds-icon">🛰</div>
+      <div class="ds-sub">Historical Archive</div>
+      <div class="ds-title">Landsat 8/9</div>
+      <div class="ds-body">Provides a multi-decade archive enabling change detection back to 2010. Used to establish baseline Roseau cane distribution and track long-term die-back trends in the lower MRD.</div>
+      <ul class="ds-specs">
+        <li>Spatial resolution <span>30 m</span></li>
+        <li>Revisit time <span>16 days</span></li>
+        <li>Bands used <span>Visible, NIR, SWIR</span></li>
+        <li>Years analyzed <span>2010, 2019, 2022</span></li>
+      </ul>
+    </div>
+    <div class="datasrc-card ds-sentinel">
+      <div class="ds-icon">📡</div>
+      <div class="ds-sub">High Resolution</div>
+      <div class="ds-title">Sentinel-2 MSI</div>
+      <div class="ds-body">Finer spatial resolution (10 m) and red-edge bands provide improved discrimination between Roseau cane and co-occurring marsh species at the patch level — newly incorporated into the 2022 classification.</div>
+      <ul class="ds-specs">
+        <li>Spatial resolution <span>10 m (VIS/NIR)</span></li>
+        <li>Revisit time <span>5 days</span></li>
+        <li>Bands used <span>Red-edge, NIR, SWIR</span></li>
+        <li>Years analyzed <span>2022 (new)</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ── CLASSIFICATION RESULTS ── -->
+<section class="fade-in">
+  <div class="section-tag">Classification Results</div>
+  <h2>Land Cover Classes Detected</h2>
+  <p class="lead">The classification system distinguishes 8 spectrally distinct land cover types across the study area, with Roseau cane separated at the species level.</p>
+
+  <div class="classes-grid">
+    <div class="class-chip"><div class="class-swatch" style="background:#5a2d0c;"></div><div class="class-name">Dead Vegetation</div></div>
+    <div class="class-chip"><div class="class-swatch" style="background:#2e6b3e;"></div><div class="class-name">Delta Phragmites<br><small style="opacity:0.6;font-weight:400">(Roseau Cane)</small></div></div>
+    <div class="class-chip"><div class="class-swatch" style="background:#7ab832;"></div><div class="class-name">European Phragmites</div></div>
+    <div class="class-chip"><div class="class-swatch" style="background:#a8c84a;"></div><div class="class-name">Marsh Grass</div></div>
+    <div class="class-chip"><div class="class-swatch" style="background:#8b6a3a;"></div><div class="class-name">Mud</div></div>
+    <div class="class-chip"><div class="class-swatch" style="background:#1a4a7a;"></div><div class="class-name">Open Water</div></div>
+    <div class="class-chip"><div class="class-swatch" style="background:#2a2a3a;"></div><div class="class-name">Shadow</div></div>
+    <div class="class-chip"><div class="class-swatch" style="background:#5a7a3a;"></div><div class="class-name">Shrub</div></div>
+  </div>
+
+  <div class="map-results-grid" style="margin-top:48px;">
+    <div class="map-result-card">
+      <div class="map-result-thumb">
+        <div class="map-thumb-label">Landsat — 2022</div>
+        <svg width="100%" height="100%" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg" class="map-placeholder-svg">
+          <rect width="300" height="200" fill="#1a2a1a"/>
+          <ellipse cx="100" cy="100" rx="60" ry="40" fill="#2e6b3e" opacity="0.8"/>
+          <ellipse cx="200" cy="80" rx="40" ry="55" fill="#2e6b3e" opacity="0.7"/>
+          <ellipse cx="150" cy="150" rx="50" ry="30" fill="#5a7a3a" opacity="0.6"/>
+          <path d="M60 200 Q80 150 90 100 Q100 60 120 20" stroke="#1a4a7a" stroke-width="6" fill="none"/>
+        </svg>
+        <div style="position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,0.6);border-radius:6px;padding:4px 10px;font-size:11px;color:rgba(255,255,255,0.7);">→ Embed Web Map</div>
+      </div>
+      <div class="map-result-info">
+        <div class="map-result-year">2022</div>
+        <div class="map-result-src">Landsat 8 · Sentinel-2 · Lower MRD</div>
+        <div class="map-result-desc">Initial classification completed. Validation ongoing against NAIP and Google Earth. First year with dual-sensor approach.</div>
+      </div>
+    </div>
+    <div class="map-result-card">
+      <div class="map-result-thumb">
+        <div class="map-thumb-label">Landsat — 2010 (Baseline)</div>
+        <svg width="100%" height="100%" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg" class="map-placeholder-svg">
+          <rect width="300" height="200" fill="#1a2a1a"/>
+          <ellipse cx="90" cy="90" rx="75" ry="50" fill="#2e6b3e" opacity="0.9"/>
+          <ellipse cx="210" cy="100" rx="50" ry="65" fill="#2e6b3e" opacity="0.75"/>
+          <ellipse cx="160" cy="160" rx="40" ry="25" fill="#5a7a3a" opacity="0.65"/>
+          <path d="M60 200 Q80 150 90 100 Q100 60 120 20" stroke="#1a4a7a" stroke-width="6" fill="none"/>
+        </svg>
+        <div style="position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,0.6);border-radius:6px;padding:4px 10px;font-size:11px;color:rgba(255,255,255,0.7);">→ Embed Web Map</div>
+      </div>
+      <div class="map-result-info">
+        <div class="map-result-year">2010</div>
+        <div class="map-result-src">Landsat · Lower MRD · Baseline Year</div>
+        <div class="map-result-desc">Pre-die-back baseline distribution. Larger contiguous stands compared to subsequent surveys. Used as reference for change detection analysis.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── ACCURACY ── -->
+<div class="accuracy-band fade-in">
+  <div class="accuracy-inner">
+    <div class="accuracy-big">
+      <div class="acc-section-tag">Validation</div>
+      <div class="accuracy-pct">92%</div>
+      <div class="accuracy-pct-label">Overall Classification Accuracy</div>
+      <div class="kappa-row">
+        <div class="kappa-item"><div class="kappa-val">0.89</div><div class="kappa-lab">Kappa Coefficient</div></div>
+        <div class="kappa-item"><div class="kappa-val">8</div><div class="kappa-lab">Land Cover Classes</div></div>
+        <div class="kappa-item"><div class="kappa-val">314</div><div class="kappa-lab">Validation Points</div></div>
+      </div>
+    </div>
+    <div class="accuracy-table">
+      <div class="acc-section-tag">Per-Class Accuracy</div>
+      <div class="acc-h2">Confusion Matrix Summary</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Class</th>
+            <th>User Acc.</th>
+            <th>Producer Acc.</th>
+            <th>n</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Dead Vegetation</td><td class="hi">1.00</td><td class="hi">1.00</td><td>15</td></tr>
+          <tr><td>Delta Phragmites</td><td class="hi">0.90</td><td class="hi">1.00</td><td>117</td></tr>
+          <tr><td>European Phragmites</td><td>0.92</td><td class="low">0.50</td><td>13</td></tr>
+          <tr><td>Marsh Grass</td><td class="hi">0.95</td><td>0.90</td><td>98</td></tr>
+          <tr><td>Mud</td><td class="hi">1.00</td><td class="hi">1.00</td><td>7</td></tr>
+          <tr><td>Water</td><td class="hi">0.95</td><td class="hi">1.00</td><td>22</td></tr>
+          <tr><td>Shadow</td><td class="hi">1.00</td><td class="hi">1.00</td><td>15</td></tr>
+          <tr><td>Shrub</td><td class="low">0.78</td><td>0.88</td><td>27</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── SIGNIFICANCE ── -->
+<div class="significance">
+  <div class="sig-inner">
+    <div class="section-tag">Research Significance</div>
+    <h2>Why This Mapping Matters</h2>
+    <div class="sig-grid">
+      <div class="sig-card fade-in">
+        <div class="sig-icon">🌿</div>
+        <div class="sig-title">Species-Level Discrimination</div>
+        <div class="sig-body">First large-scale map to separate Roseau cane from other marsh vegetation across the entire lower MRD, enabling species-specific monitoring rather than generic wetland assessment.</div>
+      </div>
+      <div class="sig-card fade-in">
+        <div class="sig-icon">📊</div>
+        <div class="sig-title">Decision Support for Restoration</div>
+        <div class="sig-body">Spatial distribution data and change patterns across three decades provide actionable intelligence for wetland restoration prioritization and Roseau cane conservation strategy.</div>
+      </div>
+      <div class="sig-card fade-in">
+        <div class="sig-icon">🔬</div>
+        <div class="sig-title">Hypothesis Testing at Scale</div>
+        <div class="sig-body">Large-scale mapped distributions allow statistical testing of field-observed hypotheses about Roseau cane growth preferences relative to river distance, hydrology, and soil conditions.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-logo">Roseau<span>Watch</span> · Wetland Mapping</div>
+  <div class="footer-links">
+    <a href="#">← Project Home</a>
+    <a href="#">Drone Monitoring →</a>
+    <a href="#">5-Year Analysis →</a>
+    <a href="#">Data Portal</a>
+  </div>
+  <div class="footer-copy">Louisiana State University · Agreement AP23PPQS&T00C161 · Reporting Period March–September 2025</div>
+</footer>
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
