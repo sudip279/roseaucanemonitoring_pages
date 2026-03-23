@@ -351,9 +351,49 @@
 
   /* ── MAP ANIMATION LINES ── */
   @keyframes drawline { from { stroke-dashoffset: 300; } to { stroke-dashoffset: 0; } }
+
+  /* ── TOP NAV ── */
+  .top-nav {
+    position: sticky; top: 0; z-index: 200;
+    background: rgba(13,34,24,0.95); backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(122,184,146,0.15);
+    padding: 0 40px; height: 48px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .top-nav-brand {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px; color: var(--white); font-style: italic;
+  }
+  .top-nav-brand span { color: var(--accent); }
+  .top-nav-links { display: flex; gap: 4px; }
+  .top-nav-links a {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 12px; color: rgba(255,255,255,0.45);
+    text-decoration: none; padding: 6px 14px; border-radius: 6px;
+    transition: all 0.15s;
+  }
+  .top-nav-links a:hover { background: rgba(122,184,146,0.1); color: var(--accent); }
+  .top-nav-links a.active { color: var(--accent); background: rgba(122,184,146,0.1); }
+  .top-nav-tag {
+    font-size: 10px; font-family: 'Source Sans 3', sans-serif;
+    color: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px; padding: 3px 10px; letter-spacing: 1px;
+  }
 </style>
 </head>
 <body>
+
+<!-- ── TOP NAV ── -->
+<div class="top-nav">
+  <div class="top-nav-brand">Roseau<span>Watch</span></div>
+  <div class="top-nav-links">
+    <a href="https://roseaucanemonitoring-lsu-its.hub.arcgis.com" target="_top">Home</a>
+    <a href="https://lsu-its.hub.arcgis.com/pages/wetland-mapping-1~f80469aaaffe4bf89bcbb7a222578351" target="_top" class="active">Wetland Mapping</a>
+    <a href="https://lsu-its.hub.arcgis.com/pages/drone-monitoring~b700dd0b474b4f2a9e7a734c331e5153" target="_top">Drone Monitoring →</a>
+    <a href="https://lsu-its.hub.arcgis.com/pages/five-year-monitoring~5dd894b2badd4e1d9ff9284c93905356" target="_top">5-Year Analysis →</a>
+  </div>
+  <div class="top-nav-tag">Milestone 2</div>
+</div>
 
 <!-- ── HERO ── -->
 <div class="hero">
