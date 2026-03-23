@@ -355,29 +355,40 @@
   /* ── TOP NAV ── */
   .top-nav {
     position: sticky; top: 0; z-index: 200;
-    background: rgba(13,34,24,0.95); backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(122,184,146,0.15);
-    padding: 0 40px; height: 48px;
+    background: rgba(13,34,24,0.97); backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(122,184,146,0.2);
+    padding: 0 40px; height: 52px;
     display: flex; align-items: center; justify-content: space-between;
   }
   .top-nav-brand {
     font-family: 'Playfair Display', serif;
     font-size: 15px; color: var(--white); font-style: italic;
+    flex-shrink: 0;
   }
   .top-nav-brand span { color: var(--accent); }
-  .top-nav-links { display: flex; gap: 4px; }
+  .top-nav-links { display: flex; gap: 4px; align-items: center; }
   .top-nav-links a {
     font-family: 'Source Sans 3', sans-serif;
     font-size: 12px; color: rgba(255,255,255,0.45);
     text-decoration: none; padding: 6px 14px; border-radius: 6px;
-    transition: all 0.15s;
+    transition: all 0.15s; white-space: nowrap;
   }
-  .top-nav-links a:hover { background: rgba(122,184,146,0.1); color: var(--accent); }
-  .top-nav-links a.active { color: var(--accent); background: rgba(122,184,146,0.1); }
+  .top-nav-links a:hover { background: rgba(122,184,146,0.12); color: var(--accent); }
+  .top-nav-links a.active {
+    color: #0d1f14;
+    background: var(--accent);
+    font-weight: 600;
+    border-radius: 6px;
+  }
+  .top-nav-links a.active:hover { background: #8fc9a3; }
+  .top-nav-links .nav-sep {
+    color: rgba(255,255,255,0.15); font-size: 14px; padding: 0 2px; pointer-events: none;
+  }
   .top-nav-tag {
     font-size: 10px; font-family: 'Source Sans 3', sans-serif;
-    color: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.1);
+    color: var(--accent); border: 1px solid rgba(122,184,146,0.3);
     border-radius: 4px; padding: 3px 10px; letter-spacing: 1px;
+    flex-shrink: 0;
   }
 </style>
 </head>
@@ -387,7 +398,8 @@
 <div class="top-nav">
   <div class="top-nav-brand">Roseau<span>Watch</span></div>
   <div class="top-nav-links">
-    <a href="https://roseaucanemonitoring-lsu-its.hub.arcgis.com" target="_top">Home</a>
+    <a href="https://roseaucanemonitoringwebsite-lsu-its.hub.arcgis.com/" target="_top">Home</a>
+    <span class="nav-sep">|</span>
     <a href="https://lsu-its.hub.arcgis.com/pages/wetland-mapping-1~f80469aaaffe4bf89bcbb7a222578351" target="_top" class="active">Wetland Mapping</a>
     <a href="https://lsu-its.hub.arcgis.com/pages/drone-monitoring~b700dd0b474b4f2a9e7a734c331e5153" target="_top">Drone Monitoring →</a>
     <a href="https://lsu-its.hub.arcgis.com/pages/five-year-monitoring~5dd894b2badd4e1d9ff9284c93905356" target="_top">5-Year Analysis →</a>
@@ -678,10 +690,10 @@
 <footer>
   <div class="footer-logo">Roseau<span>Watch</span> · Wetland Mapping</div>
   <div class="footer-links">
-    <a href="https://roseaucanemonitoring-lsu-its.hub.arcgis.com" target="_top">← Project Home</a>
+    <a href="https://roseaucanemonitoringwebsite-lsu-its.hub.arcgis.com/" target="_top">← Project Home</a>
     <a href="https://lsu-its.hub.arcgis.com/pages/drone-monitoring~b700dd0b474b4f2a9e7a734c331e5153" target="_top">Drone Monitoring →</a>
     <a href="https://lsu-its.hub.arcgis.com/pages/five-year-monitoring~5dd894b2badd4e1d9ff9284c93905356" target="_top">5-Year Analysis →</a>
-    <a href="https://roseaucanemonitoring-lsu-its.hub.arcgis.com" target="_top">Data Portal</a>
+    <a href="https://roseaucanemonitoringwebsite-lsu-its.hub.arcgis.com/" target="_top">Data Portal</a>
   </div>
   <div class="footer-copy">Louisiana State University · Agreement AP23PPQS&T00C161 · Reporting Period March–September 2025</div>
 </footer>
